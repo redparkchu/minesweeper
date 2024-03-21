@@ -1,9 +1,10 @@
 const board = document.querySelector(".board");
+const blockDirections = [ { "x": 1, "y": 0 }, { "x": -1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 0, "y": -1 } ]
+const directions = [ { "x": 1, "y": 0 }, { "x": -1, "y": 0 }, { "x": 0, "y": 1 }, { "x": 0, "y": -1 }, { "x": 1, "y": 1 }, { "x": -1, "y": 1 }, { "x": 1, "y": -1 }, { "x": -1, "y": -1 } ];
 var xSize = Number(document.querySelector(".xSize").value);
 var ySize = Number(document.querySelector(".ySize").value);
 var mineSize = Number(document.querySelector(".mineSize").value);
 var mineCoordinates = [];
-var directions = [];
 
 function init() {
     const applyBtn = document.querySelector(".apply-btn");
@@ -18,7 +19,6 @@ function applyBoard() {
     drawBoard(xSize, ySize);
     setMines(mineSize);
     addEventAllBlocks();
-    setDirections(xSize);
 }
 
 function drawBoard(x, y) {
@@ -49,32 +49,70 @@ function addEventAllBlocks() {
 function openBlock(event) {
     x = Number(event.target.parentElement.className);
     y = Number(event.target.parentElement.parentElement.className);
-    open(x, y);
+    coordinate = y * xSize + x;
+    if (isMine(x, y)) {
+        drawPoint(x, y, "&#128163");
+        if (confirm("지뢰입니다! 게임을 다시 시작하시겠습니까?")) {
+            applyBoard();
+        }
+        return;
+    }
+    image = getAroundMineSize(x, y);
+    if (image != 0) {
+        drawPoint(x, y, image);
+        checkFinish();
+        return;
+    }
+    drawPoint(x, y, "");
+    blockDirections.forEach(direction => open(x + direction.x, y + direction.y, []));
+    checkFinish();
 }
 
-function open(x, y) {
+function checkFinish() {
+    if (board.querySelectorAll("button").length == mineSize) {
+        if (confirm("지뢰를 모두 찾았습니다! 게임을 다시 시작하시겠습니까?")) {
+            applyBoard();
+        }
+    }
+}
+
+function open(x, y, coordinates) {
     coordinate = y * xSize + x;
-    if (isMine(coordinate)) {
-        drawPoint(x, y, 1);
+    if (!isAvailableCoordinate(x, y)) {
         return;
     }
-    if (getAroundMineSize(coordinate) != 0) {
+    if (coordinates.includes(coordinate)) {
         return;
     }
+    image = getAroundMineSize(x, y);
+    if (image != 0) {
+        drawPoint(x, y, image);
+        return;
+    }
+    drawPoint(x, y, "");
+    coordinates.push(coordinate);
+    blockDirections.forEach(direction => open(x + direction.x, y + direction.y, coordinates));
+}
+
+function isAvailableCoordinate(x, y) {
+    isAvailableX = 0 <= x && x < xSize;
+    isAvailableY = 0 <= y && y < ySize;
+    return isAvailableX && isAvailableY
 }
 
 function drawPoint(x, y, image) {
-    elements = board.getElementsByClassName(`${x}`);
-    console.log(Array.from(elements));
-    point = Array.from(elements).find(element => element.localName == "td");
-    console.log(point);
+    tr = board.children[y];
+    point = tr.children[x];
     point.innerHTML = `<span>${image}</span>`;
 }
 
-function getAroundMineSize(coordinate) {
-    size = directions.reduce((cnt, direction) => 
-        cnt + (isMine(coordinate + direction)), 0
-     );
+function getAroundMineSize(x, y) {
+    size = 0
+    directions.forEach(direction => {
+        if (isMine(x + direction.x, y + direction.y)) {
+            size++;
+        }
+    })   
     return size; 
 }
 
@@ -83,13 +121,6 @@ function isMine(x, y) {
     return mineCoordinates.includes(coordinate);
 }
 
-function isMine(coordinate) {
-    return mineCoordinates.includes(coordinate);
-}
-
-function setDirections(index) {
-    directions = [1, -1, index, -index, 1+index, 1-index, -1+index, -1-index];
-}
 
 function shuffle(array) {
     for (let index = array.length - 1; index > 0; index--) {
