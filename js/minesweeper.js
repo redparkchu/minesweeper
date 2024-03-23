@@ -6,6 +6,10 @@ var ySize = Number(document.querySelector(".ySize").value);
 var mineSize = Number(document.querySelector(".mineSize").value);
 var mineCoordinates = [];
 
+window.oncontextmenu=function() {
+    return false;
+}
+
 function init() {
     const applyBtn = document.querySelector(".apply-btn");
     applyBtn.addEventListener("click", applyBoard)
@@ -42,16 +46,24 @@ function setMines(size) {
 function addEventAllBlocks() {
     const btns = board.querySelectorAll("button");
     btns.forEach(btn => {
-        btn.addEventListener("click", openBlock);    
+        btn.addEventListener("mousedown", divideClick);    
     });
 }
 
-function openBlock(event) {
+function divideClick(event) {
     x = Number(event.target.parentElement.className);
     y = Number(event.target.parentElement.parentElement.className);
+    if ((event.button === 2)||(event.which === 3)) {
+        drawPoint(x, y, "&#128681");
+    } else {
+        openBlock(x, y);
+    }
+}
+
+function openBlock(x, y) {
     coordinate = y * xSize + x;
     if (isMine(x, y)) {
-        drawPoint(x, y, "&#128163");
+        drawAllMines();
         if (confirm("지뢰입니다! 게임을 다시 시작하시겠습니까?")) {
             applyBoard();
         }
@@ -68,8 +80,16 @@ function openBlock(event) {
     checkFinish();
 }
 
+function drawAllMines() {
+    mineCoordinates.forEach(coordinate => {
+        x = coordinate % xSize;
+        y = ~~(coordinate/xSize);
+        drawPoint(x, y, "&#128163");
+    });
+}
+
 function checkFinish() {
-    if (board.querySelectorAll("button").length == mineSize) {
+    if (false) {
         if (confirm("지뢰를 모두 찾았습니다! 게임을 다시 시작하시겠습니까?")) {
             applyBoard();
         }
@@ -77,7 +97,7 @@ function checkFinish() {
 }
 
 function open(x, y, coordinates) {
-    coordinate = y * xSize + x;
+    const coordinate = y * xSize + x;
     if (!isAvailableCoordinate(x, y)) {
         return;
     }
@@ -109,7 +129,9 @@ function drawPoint(x, y, image) {
 function getAroundMineSize(x, y) {
     size = 0
     directions.forEach(direction => {
-        if (isMine(x + direction.x, y + direction.y)) {
+        afterX = x + direction.x
+        afterY = y + direction.y
+        if (isMine(afterX, afterY) && isAvailableCoordinate(afterX, afterY)) {
             size++;
         }
     })   
@@ -117,7 +139,7 @@ function getAroundMineSize(x, y) {
 }
 
 function isMine(x, y) {
-    coordinate = y * xSize + x;
+    const coordinate = y * xSize + x;
     return mineCoordinates.includes(coordinate);
 }
 
