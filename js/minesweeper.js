@@ -54,19 +54,27 @@ function divideClick(event) {
     x = Number(event.target.parentElement.className);
     y = Number(event.target.parentElement.parentElement.className);
     if ((event.button === 2)||(event.which === 3)) {
-        drawPoint(x, y, "&#128681");
+        event.target.innerHTML = getFlagImage(event.target);
     } else {
         openBlock(x, y);
     }
 }
 
+function getFlagImage(btn) {
+    if (btn.innerHTML != "") {
+        return ""
+    }
+    return "&#128681"
+}
+
 function openBlock(x, y) {
     coordinate = y * xSize + x;
+    if (isFlag(x, y)) {
+        return;
+    }
     if (isMine(x, y)) {
-        drawAllMines();
-        if (confirm("지뢰입니다! 게임을 다시 시작하시겠습니까?")) {
-            applyBoard();
-        }
+        drawAllPoints();
+        alert("지뢰입니다!!");
         return;
     }
     image = getAroundMineSize(x, y);
@@ -80,6 +88,22 @@ function openBlock(x, y) {
     checkFinish();
 }
 
+function isFlag(x, y) {
+    tr = board.children[y];
+    point = tr.children[x];
+    btn = point.lastChild;
+    return btn.innerHTML != "";
+}
+
+function drawAllPoints() {
+    for (let x = 0; x < xSize; x++) {
+        for (let y = 0; y < ySize; y++) {
+            drawPoint(x, y, getAroundMineSize(x, y));
+        }
+    }
+    drawAllMines();
+}
+
 function drawAllMines() {
     mineCoordinates.forEach(coordinate => {
         x = coordinate % xSize;
@@ -89,10 +113,8 @@ function drawAllMines() {
 }
 
 function checkFinish() {
-    if (false) {
-        if (confirm("지뢰를 모두 찾았습니다! 게임을 다시 시작하시겠습니까?")) {
-            applyBoard();
-        }
+    if (board.querySelectorAll("button").length == mineSize) {
+        alert("지뢰를 모두 찾았습니다! ")
     }
 }
 
@@ -123,6 +145,9 @@ function isAvailableCoordinate(x, y) {
 function drawPoint(x, y, image) {
     tr = board.children[y];
     point = tr.children[x];
+    if (image === 0) {
+        image = "";
+    }
     point.innerHTML = `<span>${image}</span>`;
 }
 
